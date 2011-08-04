@@ -1,0 +1,107 @@
+@import url(http://fonts.googleapis.com/css?family=Bevan);
+
+body{
+	background-color: #f0f0f0;
+	margin: 0px;
+	overflow: hidden;
+	
+    font-family:"Lucida Grande", "Lucida Sans Unicode", Verdana, Arial, Helvetica, sans-serif;
+    font-size:12px;
+}
+
+h1, h2 {
+	font-family: 'Bevan', serif;
+	font-weight:normal;
+		text-align:center;
+}
+
+header {
+	position: absolute;
+	top: -40px;
+	width: 100%;
+
+	font-size: 20pt;
+
+	color: black;
+	opacity: 0.7;
+}
+
+footer {
+	position: absolute;
+	bottom: 1em;
+	width: 100%;				
+	text-align: center;
+}
+
+#container{
+    z-index: -1;
+}
+
+menu {
+	position: absolute;
+	bottom: 0;
+
+    width: 270px;
+
+    color: white;
+	background-color: rgba(0,0,0,0.5);
+	
+	padding: 1em;
+	margin: 2em;
+}
+
+menu#add {
+    left: 0;
+}
+
+menu#selected {
+    display: none;
+    right: 0;
+}
+
+.bar{
+    border: white solid 0px;
+    float: left;
+    height: 5px;
+    width: 160px;
+    margin:2px 0 20px 10px;
+	background-color: rgba(0,0,0,0.5);
+}
+
+label {
+    float: left;
+    display: block;
+    text-align:right;
+    width:140px;
+}
+
+#selected label {
+    width: 80px;
+}
+
+label .small{
+    width:140px;
+    float:left;
+    display: block;
+    font-size:0.9em;
+}
+
+input {
+    float:left;
+    font-size:12px;
+    padding:4px 2px;
+    border:solid 1px #fff;
+    color: white;
+    background-color: rgba(0,0,0,0.2);
+    width:60px;
+    margin:2px 0 20px 10px;
+}
+
+button {
+    clear:both;
+    text-align:center;
+    margin-left:85px;
+    width:100px;
+    height:31px;
+}
+
