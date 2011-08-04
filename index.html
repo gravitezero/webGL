@@ -1,376 +1,91 @@
-<html>
-
-<head>
-<title>Learning WebGL &mdash; lesson 1</title>
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
-
-<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
-<script type="text/javascript" src="webgl-utils.js"></script>
-<script type="text/javascript" src="webgl-model.js"></script>
-
-<script id="shader-fs" type="x-shader/x-fragment">
-    #ifdef GL_ES
-    precision highp float;
-    #endif
-
-    varying vec4 vColor;
-
-    void main(void) {
-        gl_FragColor = vColor;
-    }
-</script>
-
-<script id="shader-vs" type="x-shader/x-vertex">
-    attribute vec3 aVertexPosition;
-    attribute vec4 aVertexColor;
-
-    uniform mat4 uMVMatrix;
-    uniform mat4 uPMatrix;
-
-    varying vec4 vColor;
-
-    void main(void) {
-        gl_Position = uPMatrix * uMVMatrix * vec4(aVertexPosition, 1.0);
-    vColor = aVertexColor;
-    }
-</script>
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Universal Girl Ranking Metric</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/>
+		<style type="text/css">
+			@import url("style.css");
+		</style>
+	
 
 
-<script type="text/javascript">
+		<script type="text/javascript" src="Three.js"></script>
 
-    var gl;
-    
-    var lineWidth = 1;
-    
-    function initGL(canvas) {
-        try {
-            gl = canvas.getContext("experimental-webgl");
-            gl.viewportWidth = canvas.width;
-            gl.viewportHeight = canvas.height;
-        } catch (e) {
-        }
-        if (!gl) {
-            alert("Could not initialise WebGL, sorry :-(");
-        }
-    }
+		<script type="text/javascript" src="js/RequestAnimationFrame.js"></script>
+		<script type="text/javascript" src="js/Stats.js"></script>
 
-    function getShader(gl, id) {
-        var shaderScript = document.getElementById(id);
-        if (!shaderScript) {
-            return null;
-        }
+		<script type="text/javascript" src="rank.js"></script>
+		<script type="text/javascript" src="axis.js"></script>
+		
+		<script type="text/javascript" src="main.js"></script>
+		
 
-        var str = "";
-        var k = shaderScript.firstChild;
-        while (k) {
-            if (k.nodeType == 3) {
-                str += k.textContent;
-            }
-            k = k.nextSibling;
-        }
-
-        var shader;
-        if (shaderScript.type == "x-shader/x-fragment") {
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
-        } else if (shaderScript.type == "x-shader/x-vertex") {
-            shader = gl.createShader(gl.VERTEX_SHADER);
-        } else {
-            return null;
-        }
-
-        gl.shaderSource(shader, str);
-        gl.compileShader(shader);
-
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(gl.getShaderInfoLog(shader));
-            return null;
-        }
-
-        return shader;
-    }
-
-
-    var shaderProgram;
-
-    function initShaders() {
-        var fragmentShader = getShader(gl, "shader-fs");
-        var vertexShader = getShader(gl, "shader-vs");
-
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
-
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-            alert("Could not initialise shaders");
-        }
-
-        gl.useProgram(shaderProgram);
-
-        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-        gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-
-        shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
-        gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
-
-        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-    }
-
-
-    var mvMatrix = mat4.create();
-    var mvMatrixStack = [];
-    var pMatrix = mat4.create();
-
-    function mvPushMatrix() {
-        var copy = mat4.create();
-        mat4.set(mvMatrix, copy);
-        mvMatrixStack.push(copy);
-    }
-
-    function mvPopMatrix() {
-        if (mvMatrixStack.length == 0) {
-          throw "Invalid popMatrix!";
-        }
-        mvMatrix = mvMatrixStack.pop();
-    }
-
-    function setMatrixUniforms() {
-        gl.uniformMatrix4fv(shaderProgram.pMatrixUniform, false, pMatrix);
-        gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
-    }
-
-    var mouseDown = false;
-    var lastMouseX = null;
-    var lastMouseY = null;
-
-    var sceneRotationMatrix = mat4.create();
-    mat4.identity(sceneRotationMatrix);
-
-    function degToRad(degrees) {
-        return degrees * Math.PI / 180;
-    }
-
-    function handleMouseDown(event) {
-        mouseDown = true;
-        lastMouseX = event.clientX;
-        lastMouseY = event.clientY;
-    }
-
-    function handleMouseUp(event) {
-        mouseDown = false;
-    }
-
-    function handleMouseMove(event) {
-        if (mouseDown) {          
-            var newX = event.clientX;
-            var newY = event.clientY;
-            
-            var newRotationMatrix = mat4.create();
-            mat4.identity(newRotationMatrix);
-
-            var deltaX = newX - lastMouseX;
-            mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
-
-            var deltaY = newY - lastMouseY;
-            mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
-
-            mat4.multiply(newRotationMatrix, sceneRotationMatrix, sceneRotationMatrix);
-            
-            lastMouseX = newX;
-            lastMouseY = newY;
-        }
-    }
-   
-    var xCoordVertex;
-    var yCoordVertex;
-    var zCoordVertex;
-    
-    var triangleVertex;
-    
-    var coordVertexColor;
-    var triangleVertexColor;
-    
-    var girlBuffer;
-    var indexBuffer;
-    var normalBuffer;
-   
-    function initBuffers() {
-        xCoordVertex = new Model([-1.0,0.0,0.0,1.0,0.0,0.0], [0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0], gl.LINES);
-        yCoordVertex = new Model([0.0,0.0,0.0,0.0,1.0,0.0], [0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0], gl.LINES);
-        zCoordVertex = new Model([0.0,0.0,-1.0,0.0,0.0,1.0], [0.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0], gl.LINES);
-        
-        result = genSphere(20, 20, 1);
-        
-        sphere = new Model(result[0], result[1], gl.TRIANGLES);
-    }
-    
-    function isEven(value){
-        if (value%2 == 0)
-            return true;
-        else
-            return false;
-    }
-    
-    // a revoir
-    
-    function genSphere(latitudeBands, longitudeBands, radius) {
-        var vertexData = [];
-        var colorData = [];
-        
-        for (var latNumber = 0; latNumber < latitudeBands; latNumber++) {
-            var theta1 = latNumber * Math.PI / latitudeBands;
-            var theta2 = (latNumber+1) * Math.PI / latitudeBands;
-            var sinTheta1 = Math.sin(theta1);
-            var cosTheta1 = Math.cos(theta1);
-            var sinTheta2 = Math.sin(theta2);
-            var cosTheta2 = Math.cos(theta2);
-            
-            for (var longNumber = 0; longNumber < longitudeBands; longNumber++) {
-                var phi1 = longNumber * 2 * Math.PI / longitudeBands;
-                var phi2 = (longNumber+0.5) * 2 * Math.PI / longitudeBands
-                var phi3 = (longNumber+1) * 2 * Math.PI / longitudeBands;
-                var phi4 = (longNumber+1.5) * 2 * Math.PI / longitudeBands
-                
-                var sinPhi1 = Math.sin(phi1);
-                var cosPhi1 = Math.cos(phi1);
-                var sinPhi2 = Math.sin(phi2);
-                var cosPhi2 = Math.cos(phi2);
-                var sinPhi3 = Math.sin(phi3);
-                var cosPhi3 = Math.cos(phi3);
-                var sinPhi4 = Math.sin(phi4);
-                var cosPhi4 = Math.cos(phi4);
-
-                
-                var x1 = radius * cosPhi1 * sinTheta1; 
-                var y1 = radius * cosTheta1;
-                var z1 = radius * sinPhi1 * sinTheta1;
-                
-                var x2 = radius * cosPhi3 * sinTheta1; 
-                var y2 = radius * cosTheta1;
-                var z2 = radius * sinPhi3 * sinTheta1;
-                
-                var x3 = radius * cosPhi2 * sinTheta2; 
-                var y3 = radius * cosTheta2;
-                var z3 = radius * sinPhi2 * sinTheta2;
-                
-                var x4 = radius * cosPhi4 * sinTheta2; 
-                var y4 = radius * cosTheta2;
-                var z4 = radius * sinPhi4 * sinTheta2;
-                
-                if (latNumber != 0)
-                {
-                    vertexData.push(x1);
-                    vertexData.push(y1);
-                    vertexData.push(z1);
-                    colorData.push(1.0);
-                    colorData.push(0.0);
-                    colorData.push(0.0);
-                    colorData.push(0.5);
-                    
-                    vertexData.push(x2);
-                    vertexData.push(y2);
-                    vertexData.push(z2);
-                    colorData.push(1.0);
-                    colorData.push(0.0);
-                    colorData.push(0.0);
-                    colorData.push(0.5);
-                    
-                    vertexData.push(x3);
-                    vertexData.push(y3);
-                    vertexData.push(z3);
-                    colorData.push(1.0);
-                    colorData.push(0.0);
-                    colorData.push(0.0);
-                    colorData.push(0.5);
-                }
-                
-                if (latNumber != (latitudeBands-1))
-                {
-                    vertexData.push(x4);
-                    vertexData.push(y4);
-                    vertexData.push(z4);
-                    colorData.push(1.0);
-                    colorData.push(0.0);
-                    colorData.push(0.0);
-                    colorData.push(0.5);
-                    
-                    vertexData.push(x2);
-                    vertexData.push(y2);
-                    vertexData.push(z2);
-                    colorData.push(1.0);
-                    colorData.push(0.0);
-                    colorData.push(0.0);
-                    colorData.push(0.5);
-                    
-                    vertexData.push(x3);
-                    vertexData.push(y3);
-                    vertexData.push(z3);
-                    colorData.push(1.0);
-                    colorData.push(0.0);
-                    colorData.push(0.0);
-                    colorData.push(0.5);
-                }
-            }
-        }
-        return [vertexData, colorData];
-    }
-
-    function drawScene() {
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
-        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
-
-        mat4.identity(mvMatrix);
-
-        mat4.translate(mvMatrix, [0.0, 0.0, -3.0]);
-
-        mat4.multiply(mvMatrix, sceneRotationMatrix);
-        
-        xCoordVertex.draw();
-        yCoordVertex.draw();
-        zCoordVertex.draw();
-        
-        sphere.draw();
-
-       
-    }
-
-    function tick() {
-        requestAnimFrame(tick);
-        drawScene();
-    }
-
-    function webGLStart() {
-        var canvas = document.getElementById("lesson01-canvas");
-        initGL(canvas);
-        initShaders();
-        initBuffers();
-
-        gl.clearColor(0.0, 0.0, 0.0, 0.0);
-        //gl.enable(gl.DEPTH_TEST);
-        gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-        gl.enable(gl.BLEND);
-        gl.disable(gl.DEPTH_TEST);
-        //gl.uniform1f(shaderProgram.alphaUniform, parseFloat(document.getElementById("alpha").value));
-
-        canvas.onmousedown = handleMouseDown;
-        document.onmouseup = handleMouseUp;
-        document.onmousemove = handleMouseMove;
-
-        tick();
-    }
-
-
-</script>
-
-
-</head>
-
-
-<body onload="webGLStart();">
-    <canvas id="lesson01-canvas" style="border: none;" width="500" height="500"></canvas>
-</body>
-
+		
+	</head>
+	<body onLoad="main();">
+		<header>
+			<h1>Universal Girl Ranking Metric</h1>
+		</header>
+		<div id="container"></div>
+		    <menu id="add">
+		        <form>
+			        <h2>Add a girl</h2>
+			
+			        <label>Type
+			            <span class="small">0-360</span>
+			        </label>
+			        <input type="text" name="Type" value="360" />
+			
+			        <label>Beauty
+			            <span class="small">1 is the best</span>
+			        </label>
+			        <input type="text" name="Beauty" value="0.5" />
+			
+			        <label>Charm
+			            <span class="small">1 is the best</span>			
+			        </label>
+			        <input type="text" name="Charm" value="0.5" />
+			
+			        <label>Accuracy
+			            <span class="small">smaller is more accurate</span>
+			        </label>
+			        <input type="text" name="Accuracy" value="0.1" />
+			
+			        <button type="button" onclick="addRank(scene, [Type.value, Beauty.value, Charm.value, Accuracy.value]);">Rank</button>
+                </form>
+		    </menu>
+		    
+		    <menu id="selected">
+			        <h2>Selected</h2>
+			
+			        <div id="Type1">
+			            <label id="LabelType1">Type1
+			            </label>
+			            <div id="BarType1" class="bar"></div>
+			        </div>
+			       
+			        <div  id="Type2">
+			            <label id="LabelType2">Type2
+			            </label>
+			            <div id="BarType2" class="bar"></div>
+			        </div>
+			
+			        <label>Beauty
+			        </label>
+			        <div id="Beauty" class="bar"/></div>
+			
+			        <label>Charm			
+			        </label>
+			        <div id="Charm" class="bar"/></div>
+			
+			        <label>Accuracy
+			        </label>
+			        <div id="Accuracy" class="bar"/></div>
+		    </menu>
+		    
+		<footer>
+			Copyright &copy; 2011 Etienne Brodu, Florian Dupont, Gratien Rebiere
+		</footer>
+	</body>
 </html>
