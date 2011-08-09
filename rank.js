@@ -100,7 +100,7 @@ function showSelected(rank) {
     Beauty.style.borderLeftWidth = (rank[1] * 160).toString(10) + "px";
     Beauty.style.width = ((1-rank[1]) * 160).toString(10) + "px";
 
-    Charm = document.getElementById("Charm");
+    Charm = document.getElementById("Charism");
     Charm.style.borderLeftWidth = (rank[2] * 160).toString(10) + "px";
     Charm.style.width = ((1 - rank[2]) * 160).toString(10) + "px";
 
