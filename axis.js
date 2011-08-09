@@ -12,7 +12,7 @@ function yAxisSprite() {
 	context.font = "60pt Calibri";
 	context.textAlign = "center";
 	context.textBaseline = "bottom";
-	context.fillText("Charm", 0, 0);
+	context.fillText("Charism", 0, 0);
 	context.restore();
 	
 	context.lineWidth = 3;
